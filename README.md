@@ -12,6 +12,10 @@ Example: You're working on bunch of projects, each with different things you nee
 
 Me no good with shell script.
 
+##### WHY U NO GEM?
+
+Don't want to have to install it for each project running on different ruby/gemset (in rvm).
+
 ## Install
 
 1. git clone git://github.com/maxim/takeup.git ~/somewhere
