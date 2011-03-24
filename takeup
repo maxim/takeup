@@ -1,0 +1,158 @@
+#!/usr/bin/ruby
+
+require 'yaml'
+
+use_color    = true
+project_root = Dir.pwd
+project_name = File.basename(project_root)
+support_root = "#{File.expand_path("~/.takeup")}/#{project_name}"
+
+interpolator = lambda do |*args|
+  string = args[0]
+  extras = args[1] || {}
+
+  if string
+    result = string.dup
+    result.gsub!(':project_root', project_root)
+    result.gsub!(':project_name', project_name)
+    result.gsub!(':support_root', support_root)
+
+    extras.each_pair do |key, value|
+      result.gsub!(key, value) if value
+    end
+
+    result
+  end
+end
+
+processes = []
+
+config = YAML.load(File.read("#{support_root}/manifest.yml"))
+
+config.each do |process|
+  pid_file = interpolator.call(process['pid_file'])
+
+  processes << { 'name'     => process['name'],
+                 'pid_file' => pid_file,
+                 'start'    => interpolator.call(process['start'], ':pid_file' => pid_file),
+                 'stop'     => interpolator.call(process['stop'], ':pid_file' => pid_file),
+                 'required' => !!process['required'] }
+end
+
+def running?(process)
+  File.exist?(process['pid_file'])
+end
+
+pid_checker = lambda do
+  entries = []
+
+  running = use_color ? "\e[32mon\e[0m" : 'on'
+  off = use_color ? "\e[31moff\e[0m" : 'off'
+
+  processes.each do |process|
+    if process['pid_file']
+      name = process['name'] || File.basename(process['pid_file']).sub('.pid', '')
+      status = running?(process) ? running : off
+      entries << [name, status]
+    end
+  end
+
+  entries
+end
+
+project_title = use_color ? "\e[32m#{project_name.capitalize}\e[0m" : project_name.capitalize
+skipped = use_color ? "\e[31m   - skipped\e[0m" : '   - skipped'
+projects_regex = /^(?:#{processes.map{|p| p['name'] && Regexp.escape(p['name'])}.compact.join('|')})$/
+debug_mode = !!ARGV.delete('--debug')
+
+run_command = lambda do |command|
+  cmd = command.dup
+
+  if debug_mode
+    puts `#{cmd}`
+  else
+    cmd << '  > /dev/null 2>&1'
+    system cmd
+  end
+end
+
+start_process = lambda do |process|
+  if process['start'] && (process['pid_file'].nil? || !running?(process))
+    if process['name']
+      puts "-> Starting #{process['name']}"
+    end
+
+    run_command.call(process['start'])
+  elsif process['pid_file'] && running?(process)
+    if process['name']
+      puts "-> Starting #{process['name']}"
+    end
+
+    puts skipped
+  end
+end
+
+stop_process = lambda do |process|
+  if process['stop'] && (process['pid_file'].nil? || running?(process))
+    if process['name']
+      puts "-> Stopping #{process['name']}"
+    end
+
+    run_command.call(process['stop'])
+  elsif process['pid_file'] && !running?(process)
+    if process['name']
+      puts "-> Stopping #{process['name']}"
+    end
+
+    puts skipped
+  end
+end
+
+def decorate(title)
+  puts "\n#{title}\n"
+  yield
+  puts "\n"
+end
+
+case ARGV[0].to_s.strip
+
+when ''
+  decorate(project_title) do
+    processes.each{ |p| start_process.call(p) }
+  end
+
+when 'minimal'
+  decorate("#{project_title} (minimal)") do
+    processes.select{ |p| p['required'] }.each{|p| start_process.call(p) }
+  end
+
+when projects_regex
+  decorate(project_title) do
+    p = processes.find{ |p| p['name'] == ARGV[0].to_s.strip }
+    start_process.call(p)
+  end
+
+when /^(?:done|off|down|stop|enough|quit|not)$/i
+  decorate(project_title) do
+    if ARGV[1].to_s.strip =~ projects_regex
+      p = processes.find{ |p| p['name'] == ARGV[1].to_s.strip }
+      stop_process.call(p)
+    else
+      processes.reverse.each{ |p| stop_process.call(p) }
+    end
+  end
+
+when /^(?:status|st)$/i
+  entries = pid_checker.call
+  width = entries.map(&:first).max.to_s.size + 6
+
+  entries = entries.map do |entry|
+    "#{entry.first}".ljust(width) + entry.last
+  end
+
+  statuses = entries.empty? ? 'no pids defined' : entries.join("\n  ")
+  decorate(project_title) { puts "  #{statuses}" }
+
+else
+  puts 'Error: command not recognized.'
+end
