@@ -27,7 +27,11 @@ end
 
 processes = []
 
-config = YAML.load(File.read("#{support_root}/manifest.yml"))
+begin
+  config = YAML.load(File.read("#{support_root}/manifest.yml"))
+rescue Errno::ENOENT
+  puts "Manifest for #{project_name} doesn't exist. Please create it at #{support_root}/manifest.yml."
+end
 
 config.each do |process|
   pid_file = interpolator.call(process['pid_file'])
