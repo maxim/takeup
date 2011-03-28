@@ -31,6 +31,7 @@ begin
   config = YAML.load(File.read("#{support_root}/manifest.yml"))
 rescue Errno::ENOENT
   puts "Manifest for #{project_name} doesn't exist. Please create it at #{support_root}/manifest.yml."
+  exit(1)
 end
 
 config.each do |process|
