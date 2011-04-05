@@ -70,6 +70,10 @@ skipped = use_color ? "\e[31m   - skipped\e[0m" : '   - skipped'
 projects_regex = /^(?:#{processes.map{|p| p['name'] && Regexp.escape(p['name'])}.compact.join('|')})$/
 debug_mode = !!ARGV.delete('--debug')
 
+find_process = lambda do |proc_name|
+  processes.find{ |p| p['name'] == proc_name }
+end
+
 run_command = lambda do |command|
   cmd = command.dup
 
@@ -113,13 +117,29 @@ stop_process = lambda do |process|
   end
 end
 
+restart_process = lambda do |process|
+  grace = 10 # seconds
+  stop_process.call(process)
+
+  grace.times do |second|
+    sleep 1
+    break unless running?(process)
+  end
+
+  start_process.call(process)
+end
+
 def decorate(title)
   puts "\n#{title}\n"
   yield
   puts "\n"
 end
 
-case ARGV[0].to_s.strip
+def argv(num)
+  ARGV[num].to_s.strip
+end
+
+case argv(0)
 
 when ''
   decorate(project_title) do
@@ -131,19 +151,31 @@ when 'minimal'
     processes.select{ |p| p['required'] }.each{|p| start_process.call(p) }
   end
 
+when 'restart'
+  decorate(project_title) do
+    if argv(1) =~ projects_regex
+      p = find_process.call(argv(1))
+      restart_process.call(p)
+    else
+      next
+    end
+  end
+
 when projects_regex
   decorate(project_title) do
-    p = processes.find{ |p| p['name'] == ARGV[0].to_s.strip }
+    p = find_process.call(argv(0))
     start_process.call(p)
   end
 
 when /^(?:done|off|down|stop|enough|quit|not)$/i
   decorate(project_title) do
-    if ARGV[1].to_s.strip =~ projects_regex
-      p = processes.find{ |p| p['name'] == ARGV[1].to_s.strip }
+    if argv(1) =~ projects_regex
+      p = find_process.call(argv(1))
       stop_process.call(p)
-    else
+    elsif argv(1).empty?
       processes.reverse.each{ |p| stop_process.call(p) }
+    else
+      next
     end
   end
 
