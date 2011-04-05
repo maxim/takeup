@@ -26,14 +26,13 @@ Don't want to have to install it for each project running on different ruby/gems
 
 takeup understands very few commands. Obviously, you have to be in your project directory for takeup to know which manifest to use.
 
-- takeup — start everything in manifest
-- takeup status — see what's running or not (shorter: takeup st)
-- takeup stop — stop everything
-
-- takeup unicorn — start only the thing named unicorn
-- takeup stop unicorn — stop only the thing named unicorn
-
-- takeup minimal — start only the things marked as `required`
+- `takeup` — start everything in manifest
+- `takeup minimal` — start only the things marked as `required`
+- `takeup status` — see what's running or not (shorter: `takeup st`)
+- `takeup stop` — stop everything
+- `takeup unicorn` — start only the thing named unicorn
+- `takeup stop unicorn` — stop only the thing named unicorn
+- `takeup restart unicorn` — attempt to gracefully stop and start unicorn
 
 ## Manifests
 
