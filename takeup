@@ -48,6 +48,22 @@ def running?(process)
   File.exist?(process['pid_file'])
 end
 
+def wait_until(process, state)
+  return if process['pid_file'].nil?
+
+  polling_interval = 0.2
+
+  if state == :running
+    while !running?(process)
+      sleep polling_interval
+    end
+  elsif state == :stopped
+    while running?(process)
+      sleep polling_interval
+    end
+  end
+end
+
 pid_checker = lambda do
   entries = []
 
@@ -69,6 +85,7 @@ project_title = use_color ? "\e[32m#{project_name.capitalize}\e[0m" : project_na
 skipped = use_color ? "\e[31m   - skipped\e[0m" : '   - skipped'
 projects_regex = /^(?:#{processes.map{|p| p['name'] && Regexp.escape(p['name'])}.compact.join('|')})$/
 debug_mode = !!ARGV.delete('--debug')
+wait_mode = !!ARGV.delete('--wait')
 
 find_process = lambda do |proc_name|
   processes.find{ |p| p['name'] == proc_name }
@@ -92,6 +109,8 @@ start_process = lambda do |process|
     end
 
     run_command.call(process['start'])
+    wait_until(process, :running) if wait_mode
+
   elsif process['pid_file'] && running?(process)
     if process['name']
       puts "-> Starting #{process['name']}"
@@ -108,6 +127,8 @@ stop_process = lambda do |process|
     end
 
     run_command.call(process['stop'])
+    wait_until(process, :stopped) if wait_mode
+
   elsif process['pid_file'] && !running?(process)
     if process['name']
       puts "-> Stopping #{process['name']}"
