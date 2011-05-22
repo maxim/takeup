@@ -2,7 +2,8 @@
 
 require 'yaml'
 
-use_color    = true
+use_color = ENV['TERM'] !~ /dumb/i
+
 project_root = Dir.pwd
 project_name = File.basename(project_root)
 support_root = "#{File.expand_path("~/.takeup")}/#{project_name}"
