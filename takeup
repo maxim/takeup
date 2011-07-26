@@ -1,12 +1,47 @@
 #!/usr/bin/env ruby
 
 require 'yaml'
+require 'optparse'
 
 use_color = ENV['TERM'] !~ /dumb/i
 
+command_options = {}
+
+options_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: takeup [command] [options]"
+
+  opts.on('-w', '--wait', 'Always wait until processes start/stop') do |wait_switch|
+    puts "USING WAIT MODE"
+    command_options[:wait] = wait_switch
+  end
+
+  opts.on('-d', '--debug', 'Let commands print all their output') do |debug_switch|
+    puts "USING DEBUG MODE"
+    command_options[:debug] = debug_switch
+  end
+
+  opts.on('-m', '--manifest [NAME]', 'Use a manifest with a custom name') do |manifest_name|
+    puts "USING MANIFEST #{manifest_name}"
+    command_options[:manifest] = manifest_name.strip
+  end
+end
+
+options_parser.parse!(ARGV)
+
+ARGV.select{ |a| a.strip =~ /^-/ }.map{|a| ARGV.delete(a)}
+
 project_root = Dir.pwd
-project_name = File.basename(project_root)
+project_name = command_options[:manifest] || File.basename(project_root)
 support_root = "#{File.expand_path("~/.takeup")}/#{project_name}"
+debug_mode = !!command_options[:debug]
+wait_mode = !!command_options[:wait]
+
+begin
+  config = YAML.load(File.read("#{support_root}/manifest.yml"))
+rescue Errno::ENOENT
+  puts "Manifest for #{project_name} doesn't exist. Please create it at #{support_root}/manifest.yml."
+  exit(1)
+end
 
 interpolator = lambda do |*args|
   string = args[0]
@@ -27,13 +62,6 @@ interpolator = lambda do |*args|
 end
 
 processes = []
-
-begin
-  config = YAML.load(File.read("#{support_root}/manifest.yml"))
-rescue Errno::ENOENT
-  puts "Manifest for #{project_name} doesn't exist. Please create it at #{support_root}/manifest.yml."
-  exit(1)
-end
 
 config.each do |process|
   pid_file = interpolator.call(process['pid_file'])
@@ -85,8 +113,6 @@ end
 project_title = use_color ? "\e[32m#{project_name.capitalize}\e[0m" : project_name.capitalize
 skipped = use_color ? "\e[31m   - skipped\e[0m" : '   - skipped'
 projects_regex = /^(?:#{processes.map{|p| p['name'] && Regexp.escape(p['name'])}.compact.join('|')})$/
-debug_mode = !!ARGV.delete('--debug')
-wait_mode = !!ARGV.delete('--wait')
 
 find_process = lambda do |proc_name|
   processes.find{ |p| p['name'] == proc_name }

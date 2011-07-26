@@ -90,13 +90,17 @@ takeup knows how to interpolate these colon-prefixed vars when you use them in y
 - :pid\_file	— the exact thing you specified in `pid_file` yml entry, in case you want to reuse it in your `start`  or stop command (see how I stop unicorn in the example above)
 - :support\_root — points to `~/.takeup/project_name` so you can throw config files in there and reference them in start/stop (see example above)
 
+## Custom manifest name
+
+If you want takeup to use a custom manifest name (not the name of project directory), it's possible using the `--manifest` (or `-m`) flag. For example `takeup status -m foobar` will use `~/.takeup/foobar/manifest.yml`.
+
 ## Wait mode
 
-You can add `--wait` flag to any of the start/stop commands. In this mode, takeup will not move on until it ensured that a process has indeed started or stopped (by polling for pid file's existence).
+You can add `--wait` (or `-w`) flag to any of the start/stop commands. In this mode, takeup will not move on until it ensured that a process has indeed started or stopped (by polling for pid file's existence).
 
 ## Debug mode
 
-You can add `--debug` to any of the commands (listed above) to prevent takeup from eating your STDOUT/STDERR (which it does by default, because I like pretty.)
+You can add `--debug` (or `-d`) to any of the commands (listed above) to prevent takeup from eating your STDOUT/STDERR (which it does by default, because I like pretty.)
 
 ## More examples
 
