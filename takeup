@@ -11,17 +11,14 @@ options_parser = OptionParser.new do |opts|
   opts.banner = "Usage: takeup [command] [options]"
 
   opts.on('-w', '--wait', 'Always wait until processes start/stop') do |wait_switch|
-    puts "USING WAIT MODE"
     command_options[:wait] = wait_switch
   end
 
   opts.on('-d', '--debug', 'Let commands print all their output') do |debug_switch|
-    puts "USING DEBUG MODE"
     command_options[:debug] = debug_switch
   end
 
   opts.on('-m', '--manifest [NAME]', 'Use a manifest with a custom name') do |manifest_name|
-    puts "USING MANIFEST #{manifest_name}"
     command_options[:manifest] = manifest_name.strip
   end
 end
