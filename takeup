@@ -17,28 +17,34 @@ options_parser = OptionParser.new do |opts|
   opts.on('-d', '--debug', 'Let commands print all their output') do |debug_switch|
     command_options[:debug] = debug_switch
   end
-
-  opts.on('-m', '--manifest [NAME]', 'Use a manifest with a custom name') do |manifest_name|
-    command_options[:manifest] = manifest_name.strip
-  end
 end
 
 options_parser.parse!(ARGV)
-
 ARGV.select{ |a| a.strip =~ /^-/ }.map{|a| ARGV.delete(a)}
 
 project_root = Dir.pwd
-project_name = command_options[:manifest] || File.basename(project_root)
-support_root = "#{File.expand_path("~/.takeup")}/#{project_name}"
-debug_mode = !!command_options[:debug]
-wait_mode = !!command_options[:wait]
+project_name = File.basename(project_root)
+debug_mode = command_options[:debug]
+wait_mode = command_options[:wait]
 
-begin
-  config = YAML.load(File.read("#{support_root}/manifest.yml"))
-rescue Errno::ENOENT
-  puts "Manifest for #{project_name} doesn't exist. Please create it at #{support_root}/manifest.yml."
+host = `hostname -s`.strip
+host_takeup_dir = "#{project_root}/.takeup/#{host}"
+home_takeup_dir = "#{File.expand_path("~/.takeup")}/#{project_name}"
+
+def manifest_found_in?(dir)
+  File.exist?("#{dir}/manifest.yml")
+end
+
+support_root = if manifest_found_in?(home_takeup_dir)
+  home_takeup_dir
+elsif manifest_found_in?(host_takeup_dir)
+  host_takeup_dir
+else
+  puts "Manifest for #{project_name} doesn't exist. Please create it at either #{home_takeup_dir}/manifest.yml or #{host_takeup_dir}/manifest.yml."
   exit(1)
 end
+
+config = YAML.load(File.read("#{support_root}/manifest.yml"))
 
 interpolator = lambda do |*args|
   string = args[0]

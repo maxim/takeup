@@ -8,19 +8,10 @@ Example: You're working on bunch of projects, each with different things you nee
 1. write a takeup manifest
 2. partey
 
-##### WHY U NO SHELL SCRIPT?
-
-Me no good with shell script.
-
-##### WHY U NO GEM?
-
-Don't want to have to install it for each project running on different ruby/gemset (in rvm).
-
 ## Install
 
 1. git clone git://github.com/maxim/takeup.git ~/somewhere
 2. ln -s ~/somewhere/takeup ~/bin/takeup (or whatever is in your path)
-3. mkdir ~/.takeup (this is where manifests go)
 
 ## Commands
 
@@ -34,11 +25,33 @@ takeup understands very few commands. Obviously, you have to be in your project 
 - `takeup stop unicorn` — stop only the thing named unicorn
 - `takeup restart unicorn` — attempt to gracefully stop and start unicorn
 
-## Manifests
+## Storing manifests
 
-Manifests are yaml files which tell takeup what to run to start/stop things. They go into `~/.takeup/project_name/manifest.yml`.
+Manifests can either be stored in your home directory (`~/.takeup`), or under your project's directory (`~/dev/printio/.takeup`), depending on your use case.
 
-Here's an example manifest I keep in `~/.takeup/printio/manifest.yml`.
+### Storing manifests in your home dir 
+
+Useful when you just want to write a manifest for yourself without bothering anyone else. Simply throw one into your home dir.
+
+    ~/.takeup/project_name/manifest.yml
+
+The project\_name should be the dirname of your project. For example, if my project is in `~/dev/foobar` then the project_name is foobar.
+
+### Storing manifests in the project's dir
+
+You can also keep your manifests in the project's dir, versioned. In this case takeup looks up your hostname using `hostname -s` command to scope manifests per developer.
+
+    /path/to/project/.takeup/hostname/manifest.yml
+
+This is also helpful if you're changing your project's architecture (e.g. moving from delayed\_job to resque) and would like to modify takeup manifest in a particular git branch.
+
+However, if a manifest for this project is also found in your home dir, it will take precedence over the one versioned with the project.
+
+## Writing manifests
+
+Manifests are yaml files which tell takeup what to run to start/stop things.
+
+Here's an example manifest I have for printio.
 
 		- name:       "jaxer"
 		  pid_file:   ":project_root/tmp/pids/jaxer.pid"
@@ -87,20 +100,19 @@ takeup knows how to interpolate these colon-prefixed vars when you use them in y
 
 - :project\_name — the name of directory in which you run takeup
 - :project\_root — full path to directory in which you run takeup
-- :pid\_file	— the exact thing you specified in `pid_file` yml entry, in case you want to reuse it in your `start`  or stop command (see how I stop unicorn in the example above)
-- :support\_root — points to `~/.takeup/project_name` so you can throw config files in there and reference them in start/stop (see example above)
+- :pid\_file	— the exact thing you specified in `pid_file` yml entry, in case you want to reuse it in your `start` or stop command (see how I stop unicorn in the example above)
+- :support\_root — points to the takeup dir for this project (e.g. `~/.takeup/project_name` or `~/dev/project/.takeup/hostname/`, depending on where your takeup manifest is found) so that you can throw config files in there and reference them in start/stop (see example above)
 
-## Custom manifest name
+## Options
 
-If you want takeup to use a custom manifest name (not the name of project directory), it's possible using the `--manifest` (or `-m`) flag. For example `takeup status -m foobar` will use `~/.takeup/foobar/manifest.yml`.
-
-## Wait mode
+### Wait mode
 
 You can add `--wait` (or `-w`) flag to any of the start/stop commands. In this mode, takeup will not move on until it ensured that a process has indeed started or stopped (by polling for pid file's existence).
 
-## Debug mode
+### Debug mode
 
 You can add `--debug` (or `-d`) to any of the commands (listed above) to prevent takeup from eating your STDOUT/STDERR (which it does by default, because I like pretty.)
+
 
 ## More examples
 
