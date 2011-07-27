@@ -47,6 +47,12 @@ This is also helpful if you're changing your project's architecture (e.g. moving
 
 However, if a manifest for this project is also found in your home dir, it will take precedence over the one versioned with the project.
 
+### Storing manifests in the project's config dir
+
+I'm a neat freak, and if I'm versioning takeup manifests for a rails app or similar, I want them in config/takeup with all the other configs. Hence I added this lookup location. This dir is also scoped by hostnames, and it's the last place in the lookup chain.
+
+    /path/to/project/config/takeup/hostname/manifest.yml
+
 ## Writing manifests
 
 Manifests are yaml files which tell takeup what to run to start/stop things.

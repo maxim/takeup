@@ -27,20 +27,33 @@ project_name = File.basename(project_root)
 debug_mode = command_options[:debug]
 wait_mode = command_options[:wait]
 
-host = `hostname -s`.strip
-host_takeup_dir = "#{project_root}/.takeup/#{host}"
+host = `hostname -s`.strip;
+conf_takeup_dir = "#{project_root}/config/takeup/#{host}"
+root_takeup_dir = "#{project_root}/.takeup/#{host}"
 home_takeup_dir = "#{File.expand_path("~/.takeup")}/#{project_name}"
 
 def manifest_found_in?(dir)
   File.exist?("#{dir}/manifest.yml")
 end
 
-support_root = if manifest_found_in?(home_takeup_dir)
-  home_takeup_dir
-elsif manifest_found_in?(host_takeup_dir)
-  host_takeup_dir
-else
-  puts "Manifest for #{project_name} doesn't exist. Please create it at either #{home_takeup_dir}/manifest.yml or #{host_takeup_dir}/manifest.yml."
+support_root = [ home_takeup_dir, 
+                 root_takeup_dir, 
+                 conf_takeup_dir ].find{ |dir| manifest_found_in?(dir) }
+
+if support_root.nil?
+  paths_snippet = <<-PATHS
+  - #{home_takeup_dir}/manifest.yml
+  - #{root_takeup_dir}/manifest.yml
+  - #{conf_takeup_dir}/manifest.yml
+PATHS
+
+  paths_snippet = "\e[32m#{paths_snippet}\e[0m" if use_color
+
+  puts <<-TEXT
+Manifest for #{project_name} doesn't exist. Please create it in one of the following paths: 
+#{paths_snippet}
+TEXT
+
   exit(1)
 end
 
