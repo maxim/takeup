@@ -36,8 +36,8 @@ def manifest_found_in?(dir)
   File.exist?("#{dir}/manifest.yml")
 end
 
-support_root = [ home_takeup_dir, 
-                 root_takeup_dir, 
+support_root = [ home_takeup_dir,
+                 root_takeup_dir,
                  conf_takeup_dir ].find{ |dir| manifest_found_in?(dir) }
 
 if support_root.nil?
@@ -50,7 +50,7 @@ PATHS
   paths_snippet = "\e[32m#{paths_snippet}\e[0m" if use_color
 
   puts <<-TEXT
-Manifest for #{project_name} doesn't exist. Please create it in one of the following paths: 
+Manifest for #{project_name} doesn't exist. Please create it in one of the following paths:
 #{paths_snippet}
 TEXT
 
@@ -231,7 +231,7 @@ when projects_regex
     start_process.call(p)
   end
 
-when /^(?:done|off|down|stop|enough|quit|not)$/i
+when /^(?:down|stop|quit)$/i
   decorate(project_title) do
     if argv(1) =~ projects_regex
       p = find_process.call(argv(1))
