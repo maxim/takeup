@@ -210,6 +210,11 @@ when ''
     processes.each{ |p| start_process.call(p) }
   end
 
+when 'manifest'
+  decorate(project_title) do
+    puts y(processes)
+  end
+
 when 'minimal'
   decorate("#{project_title} (minimal)") do
     processes.select{ |p| p['required'] }.each{|p| start_process.call(p) }
