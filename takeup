@@ -3,6 +3,10 @@
 require 'yaml'
 require 'optparse'
 
+unless respond_to?(:y)
+  def y(obj); obj.to_yaml end
+end
+
 use_color = ENV['TERM'] !~ /dumb/i
 
 command_options = {}
