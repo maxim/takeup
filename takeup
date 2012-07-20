@@ -217,6 +217,9 @@ when 'restart'
     if argv(1) =~ projects_regex
       p = find_process.call(argv(1))
       restart_process.call(p)
+    elsif argv(1).empty?
+      processes.reverse.each{ |p| stop_process.call(p) }
+      processes.each{ |p| start_process.call(p) }
     else
       next
     end
