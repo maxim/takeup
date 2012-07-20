@@ -8,15 +8,12 @@ unless respond_to?(:y)
 end
 
 use_color = ENV['TERM'] !~ /dumb/i
+POLLING_INTERVAL = 0.2
 
 command_options = {}
 
 options_parser = OptionParser.new do |opts|
   opts.banner = "Usage: takeup [command] [options]"
-
-  opts.on('-w', '--wait', 'Always wait until processes start/stop') do |wait_switch|
-    command_options[:wait] = wait_switch
-  end
 
   opts.on('-d', '--debug', 'Let commands print all their output') do |debug_switch|
     command_options[:debug] = debug_switch
@@ -29,7 +26,6 @@ ARGV.select{ |a| a.strip =~ /^-/ }.map{|a| ARGV.delete(a)}
 project_root = Dir.pwd
 project_name = File.basename(project_root)
 debug_mode = command_options[:debug]
-wait_mode = command_options[:wait]
 
 host = `hostname -s`.strip;
 conf_takeup_dir = "#{project_root}/config/takeup/#{host}"
@@ -100,15 +96,13 @@ end
 def wait_until(process, state)
   return if process['pid_file'].nil?
 
-  polling_interval = 0.2
-
   if state == :running
     while !running?(process)
-      sleep polling_interval
+      sleep POLLING_INTERVAL
     end
   elsif state == :stopped
     while running?(process)
-      sleep polling_interval
+      sleep POLLING_INTERVAL
     end
   end
 end
@@ -156,7 +150,7 @@ start_process = lambda do |process|
     end
 
     run_command.call(process['start'])
-    wait_until(process, :running) if wait_mode
+    wait_until process, :running
 
   elsif process['pid_file'] && running?(process)
     if process['name']
@@ -174,7 +168,7 @@ stop_process = lambda do |process|
     end
 
     run_command.call(process['stop'])
-    wait_until(process, :stopped) if wait_mode
+    wait_until process, :stopped
 
   elsif process['pid_file'] && !running?(process)
     if process['name']
@@ -186,14 +180,8 @@ stop_process = lambda do |process|
 end
 
 restart_process = lambda do |process|
-  grace = 10 # seconds
   stop_process.call(process)
-
-  grace.times do |second|
-    sleep 1
-    break unless running?(process)
-  end
-
+  wait_until process, :stopped
   start_process.call(process)
 end
 
