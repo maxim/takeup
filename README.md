@@ -17,17 +17,18 @@ Example: You're working on bunch of projects, each with different things you nee
 
 takeup understands very few commands. Obviously, you have to be in your project directory for takeup to know which manifest to use.
 
-- `takeup` — start everything in manifest
-- `takeup minimal` — start only the things marked as `required`
-- `takeup status` — see what's running or not (shorter: `takeup st`)
+- `takeup` — start everything in a manifest
+- `takeup minimal` — start only entries marked as `required`
+- `takeup status` — see what's running (shorter: `takeup st`)
 - `takeup stop` — stop everything
-- `takeup unicorn` — start only the thing named unicorn
-- `takeup stop unicorn` — stop only the thing named unicorn
-- `takeup restart unicorn` — attempt to gracefully stop and start unicorn
+- `takeup unicorn` — start only unicorn
+- `takeup stop unicorn` — stop only unicorn
+- `takeup restart` - stop and start everything
+- `takeup restart unicorn` — stop and start unicorn
 
-## Storing manifests
+## Where to put manifest
 
-Manifests can either be stored in your home directory (`~/.takeup`), or under your project's directory (`~/dev/printio/.takeup`), depending on your use case.
+Manifests can either be stored in your home directory (`~/.takeup`), or under your project's directory (`~/dev/project_name/.takeup`), depending on your use case. They can also be different per host when stored under your project directory (see below).
 
 ### Storing manifests in your home dir 
 
@@ -35,17 +36,17 @@ Useful when you just want to write a manifest for yourself without bothering any
 
     ~/.takeup/project_name/manifest.yml
 
-The project\_name should be the dirname of your project. For example, if my project is in `~/dev/foobar` then the project_name is foobar.
+The project\_name should be the dirname of your project. For example, if my project is in `~/dev/foobar` then the project\_name is foobar.
 
 ### Storing manifests in the project's dir
 
-You can also keep your manifests in the project's dir, versioned. In this case takeup looks up your hostname using `hostname -s` command to scope manifests per developer.
+You could also keep your manifests in the project's dir, versioned. In this case takeup looks up your hostname using `hostname -s` command to scope manifests per developer.
 
     /path/to/project/.takeup/hostname/manifest.yml
 
 This is also helpful if you're changing your project's architecture (e.g. moving from delayed\_job to resque) and would like to modify takeup manifest in a particular git branch.
 
-However, if a manifest for this project is also found in your home dir, it will take precedence over the one versioned with the project.
+Note: the manifest in your `~/.takeup` always takes precedence to the one in the project.
 
 ### Storing manifests in the project's config dir
 
@@ -95,7 +96,7 @@ takeup is really stupid. It simply runs each `start` in the order you listed it.
 None of them are required really. As you see above, I have an entry that only does `start: 'sleep 2'` between postgres and unicorn.
 
 - name — pretty display name for service being run
-- pid\_file — location of pid_file which tells takeup if something is running
+- pid\_file — location of pid\_file which tells takeup if something is running
 - start — the actual command to start something (daemonized)
 - stop — the actual command to stop something
 - required — if true, this dependency will launch when you do `takeup minimal`
@@ -109,13 +110,8 @@ takeup knows how to interpolate these colon-prefixed vars when you use them in y
 - :pid\_file	— the exact thing you specified in `pid_file` yml entry, in case you want to reuse it in your `start` or stop command (see how I stop unicorn in the example above)
 - :support\_root — points to the takeup dir for this project (e.g. `~/.takeup/project_name` or `~/dev/project/.takeup/hostname/`, depending on where your takeup manifest is found) so that you can throw config files in there and reference them in start/stop (see example above)
 
-## Options
 
-### Wait mode
-
-You can add `--wait` (or `-w`) flag to any of the start/stop commands. In this mode, takeup will not move on until it ensured that a process has indeed started or stopped (by polling for pid file's existence).
-
-### Debug mode
+## Debug mode
 
 You can add `--debug` (or `-d`) to any of the commands (listed above) to prevent takeup from eating your STDOUT/STDERR (which it does by default, because I like pretty.)
 
