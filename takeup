@@ -245,7 +245,7 @@ when /^(?:down|stop|quit)$/i
 
 when /^(?:status|st)$/i
   entries = pid_checker.call
-  width = entries.map(&:first).max.to_s.size + 6
+  width = entries.map(&:first).max_by(&:size).to_s.size + 6
 
   entries = entries.map do |entry|
     "#{entry.first}".ljust(width) + entry.last
